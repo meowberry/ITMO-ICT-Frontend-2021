@@ -30,19 +30,21 @@ export default {
       let result = {status: true, data: null, error: null}
 
       let url = `https://api.openweathermap.org/geo/1.0/direct?q=${city}&appid=${this.openweathermapKey}`
-      await this.axios.get(url)
-          .then(response => {
-            if (response.data.length === 0) {
-              result.status = false
-              result.error = 'Ошибка! Указанный город не найден'
-            } else {
-              result.data = response.data[0]
-            }
-          })
-          .catch(error => {
-            result.status = false
-            result.error = 'Ошибка! Указанный город не найден'
-          })
+
+      try {
+        let response = await this.axios.get(url)
+
+        if (response.data.length === 0) {
+          result.status = false
+          result.error = 'Ошибка! Указанный город не найден'
+        } else {
+          result.data = response.data[0]
+        }
+
+      } catch (error) {
+        result.status = false
+        result.error = 'Ошибка! Указанный город не найден'
+      }
 
       return result
     },
@@ -64,33 +66,35 @@ export default {
       params.append('appid', this.openweathermapKey)
 
       let url = `https://api.openweathermap.org/data/2.5/onecall`
-      await this.axios.get(url, {params: params})
-          .then(response => {
-            if (date === 'today') {
-              result.data = response.data.current
-            } else if (date === 'tomorrow') {
-              result.data = response.data.daily[1]
-              result.data.temp = result.data.temp.day
-            } else if (date === 'weekends') {
-              let today = new Date().getDay()
-              let weekend = 7
-              let diff = weekend - today
 
-              if (diff === 0) {
-                diff = 7
-              }
+      try {
+        let response = await this.axios.get(url, {params: params})
 
-              result.data = response.data.daily[diff]
-              result.data.temp = result.data.temp.day
-            }
+        if (date === 'today') {
+          result.data = response.data.current
+        } else if (date === 'tomorrow') {
+          result.data = response.data.daily[1]
+          result.data.temp = result.data.temp.day
+        } else if (date === 'weekends') {
+          let today = new Date().getDay()
+          let weekend = 7
+          let diff = weekend - today
 
-            result.data.name = cityResolved.data.local_names.ru
-          })
-          .catch(error => {
-            console.log('error getting weather', error)
-            result.status = false
-            result.error = 'Ошибка! Не удалось получить прогноз погоды'
-          })
+          if (diff === 0) {
+            diff = 7
+          }
+
+          result.data = response.data.daily[diff]
+          result.data.temp = result.data.temp.day
+        }
+
+        result.data.name = cityResolved.data.local_names.ru
+
+      } catch (error) {
+        console.log('error getting weather', error)
+        result.status = false
+        result.error = 'Ошибка! Не удалось получить прогноз погоды'
+      }
 
       return result
     }
